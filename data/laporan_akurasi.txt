@@ -1,0 +1,33 @@
+=== LAPORAN EVALUASI MODEL RANDOM FOREST ===
+
+1. MODEL PREDIKSI CUACA SAAT INI
+Akurasi Pengujian (Test Accuracy): 100.00%
+Classification Report:
+              precision    recall  f1-score   support
+
+     Berawan       1.00      1.00      1.00       130
+       Cerah       1.00      1.00      1.00       135
+       Hujan       1.00      1.00      1.00       113
+     Mendung       1.00      1.00      1.00       122
+
+    accuracy                           1.00       500
+   macro avg       1.00      1.00      1.00       500
+weighted avg       1.00      1.00      1.00       500
+
+--------------------------------------------------
+
+2. MODEL PREDIKSI CUACA 1 JAM KE DEPAN
+Akurasi Pengujian (Test Accuracy): 52.80%
+Classification Report:
+              precision    recall  f1-score   support
+
+     Berawan       0.42      0.38      0.40       114
+       Cerah       0.66      0.71      0.69       147
+       Hujan       0.46      0.45      0.45        91
+     Mendung       0.50      0.51      0.51       148
+
+    accuracy                           0.53       500
+   macro avg       0.51      0.51      0.51       500
+weighted avg       0.52      0.53      0.52       500
+
+=============================================

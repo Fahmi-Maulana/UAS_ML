@@ -47,6 +47,8 @@ unsigned long previousMillis = 0;
 const long interval = 10000;
 
 String lastPrediction = "Tunggu AI...";
+float mq135_R0 = 76.63; // Default R0 yang akan ditimpa oleh kalibrasi otomatis
+bool otaStarted = false; // Flag untuk memulai OTA setelah WiFi terkoneksi
 
 void setup() {
   Serial.begin(115200);
@@ -64,6 +66,22 @@ void setup() {
   } else {
     Serial.println("INA219 siap!");
   }
+
+  // Kalibrasi Otomatis MQ135 (Asumsi nyala pertama di udara segar = ~400 ppm eCO2)
+  Serial.print("Mengkalibrasi MQ135...");
+  long sumRaw = 0;
+  for(int i=0; i<20; i++){
+      sumRaw += analogRead(PIN_MQ135_ADC);
+      delay(50);
+  }
+  float avgRaw = sumRaw / 20.0;
+  float vRL = (avgRaw / 4095.0) * 3.3;
+  if(vRL > 0.1) {
+      float rS = ((3.3 * 10.0) / vRL) - 10.0;
+      // Rumus inversi kurva: R0 = rS / ((400/110.47)^(1/-2.862))  ->  (400/110.47)^(-0.3494) = 0.6362
+      mq135_R0 = rS / 0.6362; 
+  }
+  Serial.println(" Selesai! R0: " + String(mq135_R0));
   
   // Inisialisasi Layar OLED
   u8g2.begin();
@@ -122,16 +140,26 @@ void setup() {
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
   });
-  ArduinoOTA.begin();
+  });
+  // ArduinoOTA.begin() akan dipanggil di loop() setelah WiFi terkoneksi agar mDNS berhasil disiarkan
 }
 
 void loop() {
   wm.process(); // Proses WiFiManager secara non-blocking
   ArduinoOTA.handle(); // Tangani request OTA
 
-  // Update LED Indikator WiFi
+  // Update LED Indikator WiFi & OTA
   if (WiFi.status() == WL_CONNECTED) {
     digitalWrite(PIN_WIFI_LED, HIGH);
+    
+    // Mulai OTA hanya setelah mendapat IP Address
+    if (!otaStarted) {
+      ArduinoOTA.begin();
+      otaStarted = true;
+      Serial.println("WiFi Terkoneksi! IP: " + WiFi.localIP().toString());
+    }
+    
+    ArduinoOTA.handle(); // Tangani request OTA
   } else {
     digitalWrite(PIN_WIFI_LED, LOW);
   }
@@ -156,16 +184,18 @@ void loop() {
     int rawGas = analogRead(PIN_MQ135_ADC);
     
     // Perhitungan Estimasi eCO2 MQ135 berdasarkan datasheet (kurva CO2)
-    // Asumsi: ADC 12-bit (0-4095), VCC 3.3V, RL 10kOhm, R0 76.63 (Typical Fresh Air)
-    float vRL = (rawGas / 4095.0) * 3.3;
-    float gasPPM = 400.0; // Default fresh air
-    if (vRL > 0.1) {
-        float rS = ((3.3 * 10.0) / vRL) - 10.0;
-        float r0 = 76.63; 
-        float ratio = rS / r0;
+    float vRL_gas = (rawGas / 4095.0) * 3.3;
+    float gasPPM = 400.0; // Baseline udara segar
+    if (vRL_gas > 0.1) {
+        float rS = ((3.3 * 10.0) / vRL_gas) - 10.0;
+        float ratio = rS / mq135_R0;
         // Kurva eCO2 (a = 110.47, b = -2.862)
         gasPPM = 110.47 * pow(ratio, -2.862);
     }
+    
+    // Safety clamp (mencegah ledakan angka)
+    if (gasPPM < 400) gasPPM = 400;
+    if (gasPPM > 10000) gasPPM = 10000;
 
     // Baca Data Baterai dari INA219
     float busvoltage = ina219.getBusVoltage_V();
