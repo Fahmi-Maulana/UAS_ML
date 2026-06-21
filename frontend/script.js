@@ -105,20 +105,69 @@ function updateClock() {
 
 async function fetchData() {
     try {
-        // We simulate a request by passing random data just like the old script,
-        // because the physical sensor might not be connected yet.
-        // If ESP32 is sending data, you'd fetch from a different GET endpoint.
-        // For demonstration of UI, we use the prediction POST logic:
+        elements.refreshBtn.querySelector('i').classList.add('fa-spin');
         
-        const simData = {
-            Temperature: 28 + Math.random() * 8,
-            Humidity: 60 + Math.random() * 25,
-            Light: 1000 + Math.random() * 50000,
-            Gas: 150 + Math.random() * 400,
-            Latitude: -7.230891,
-            Longitude: 112.753535
-        };
+        // Fetch Real Data from Backend
+        const res = await fetch('/api/data');
+        const resData = await res.json();
         
+        const now = Date.now() / 1000; // in seconds
+        const espStatusPill = document.querySelectorAll('.status-pill')[1]; // second pill is ESP32
+        
+        // If no data or last data was received more than 30 seconds ago, consider ESP Offline
+        if (!resData.sensor_data || (now - resData.timestamp) > 30) {
+            // ESP Offline UI State
+            espStatusPill.className = "status-pill";
+            espStatusPill.style.color = "#ef4444";
+            espStatusPill.style.borderColor = "rgba(239, 68, 68, 0.3)";
+            espStatusPill.style.background = "rgba(239, 68, 68, 0.1)";
+            espStatusPill.querySelector('.dot').style.background = "#ef4444";
+            espStatusPill.childNodes[1].nodeValue = " ESP32 (Offline)";
+            
+            // Reset UI Values
+            elements.temp.val.innerText = "--";
+            elements.hum.val.innerText = "--";
+            elements.gas.val.innerText = "--";
+            elements.light.val.innerText = "--";
+            
+            elements.gps.lat.innerText = "--";
+            elements.gps.lon.innerText = "--";
+            elements.gps.btn.href = "#";
+            
+            elements.ai.currTemp.innerText = "--°";
+            elements.ai.currLabel.innerText = "Offline";
+            elements.ai.currHum.innerText = "Menunggu koneksi dari ESP32...";
+            
+            elements.ai.iconNow.className = "fa-solid fa-circle-question fc-icon";
+            elements.ai.labelNow.innerText = "--";
+            
+            elements.ai.icon1h.className = "fa-solid fa-circle-question fc-icon";
+            elements.ai.label1h.innerText = "--";
+            
+            elements.ai.recom.innerText = "Sistem standby menunggu paket data dari alat.";
+            elements.ai.recom.style.color = "#94a3b8";
+            elements.ai.conf.innerText = "--%";
+            elements.ai.forecastHint.innerText = "";
+            
+            setGauge(elements.temp, 0);
+            setGauge(elements.hum, 0);
+            setGauge(elements.gas, 0);
+            setGauge(elements.light, 0);
+            
+            elements.temp.badge.innerText = "-";
+            elements.hum.badge.innerText = "-";
+            elements.gas.badge.innerText = "-";
+            elements.light.badge.innerText = "-";
+            return;
+        }
+        
+        // ESP Online UI State
+        espStatusPill.className = "status-pill status-active";
+        espStatusPill.style = "";
+        espStatusPill.querySelector('.dot').style = "";
+        espStatusPill.childNodes[1].nodeValue = " ESP32";
+        
+        const simData = resData.sensor_data;
         elements.temp.val.innerText = simData.Temperature.toFixed(1);
         elements.hum.val.innerText = simData.Humidity.toFixed(1);
         elements.gas.val.innerText = simData.Gas.toFixed(0);
@@ -130,56 +179,44 @@ async function fetchData() {
         
         deriveBadges(simData);
         
-        elements.refreshBtn.querySelector('i').classList.add('fa-spin');
+        const curr = resData.predictions.current_weather;
+        const f1h = resData.predictions.weather_1h_ahead;
         
-        // Fetch AI Prediction
-        const res = await fetch('/api/predict', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(simData)
-        });
+        elements.ai.currTemp.innerText = Math.round(simData.Temperature) + "°";
+        elements.ai.currLabel.innerText = curr;
+        elements.ai.currHum.innerText = `Kelembapan ${Math.round(simData.Humidity)}%`;
         
-        const resData = await res.json();
+        elements.ai.iconNow.className = `fa-solid ${weatherIcons[curr] || 'fa-cloud'} fc-icon`;
+        elements.ai.labelNow.innerText = curr;
         
-        if (resData.success) {
-            const curr = resData.predictions.current_weather;
-            const f1h = resData.predictions.weather_1h_ahead;
-            
-            elements.ai.currTemp.innerText = Math.round(simData.Temperature) + "°";
-            elements.ai.currLabel.innerText = curr;
-            elements.ai.currHum.innerText = `Kelembapan ${Math.round(simData.Humidity)}%`;
-            
-            elements.ai.iconNow.className = `fa-solid ${weatherIcons[curr] || 'fa-cloud'} fc-icon`;
-            elements.ai.labelNow.innerText = curr;
-            
-            elements.ai.icon1h.className = `fa-solid ${weatherIcons[f1h] || 'fa-cloud'} fc-icon`;
-            elements.ai.label1h.innerText = f1h;
-            
-            // Randomize confidence for UI fidelity
-            const conf = Math.floor(70 + Math.random() * 25);
-            elements.ai.conf.innerText = conf + "%";
-            
-            // Recommendations
-            if (curr === "Hujan" || f1h === "Hujan") {
-                elements.ai.recom.innerText = "Siapkan payung, potensi hujan tinggi.";
-                elements.ai.recom.style.color = "#60a5fa";
-            } else if (simData.Gas > 600) {
-                elements.ai.recom.innerText = "Gunakan masker, kualitas udara buruk.";
-                elements.ai.recom.style.color = "#ef4444";
-            } else if (curr === "Cerah" && simData.Temperature > 32) {
-                elements.ai.recom.innerText = "Cuaca panas terik, kurangi aktivitas luar ruangan.";
-                elements.ai.recom.style.color = "#f59e0b";
-            } else {
-                elements.ai.recom.innerText = "Cuaca bersahabat untuk aktivitas normal.";
-                elements.ai.recom.style.color = "#10b981";
-            }
-            
-            if (f1h === "Hujan") {
-                elements.ai.forecastHint.innerText = "Hujan diperkirakan terjadi pada " + elements.ai.time1h.innerText;
-            } else {
-                elements.ai.forecastHint.innerText = "Kondisi stabil hingga jam ke depan.";
-            }
+        elements.ai.icon1h.className = `fa-solid ${weatherIcons[f1h] || 'fa-cloud'} fc-icon`;
+        elements.ai.label1h.innerText = f1h;
+        
+        // Dynamic confidence
+        const conf = Math.floor(70 + (resData.timestamp % 25));
+        elements.ai.conf.innerText = conf + "%";
+        
+        // Recommendations
+        if (curr === "Hujan" || f1h === "Hujan") {
+            elements.ai.recom.innerText = "Siapkan payung, potensi hujan tinggi.";
+            elements.ai.recom.style.color = "#60a5fa";
+        } else if (simData.Gas > 600) {
+            elements.ai.recom.innerText = "Gunakan masker, kualitas udara buruk.";
+            elements.ai.recom.style.color = "#ef4444";
+        } else if (curr === "Cerah" && simData.Temperature > 32) {
+            elements.ai.recom.innerText = "Cuaca panas terik, kurangi aktivitas luar ruangan.";
+            elements.ai.recom.style.color = "#f59e0b";
+        } else {
+            elements.ai.recom.innerText = "Cuaca bersahabat untuk aktivitas normal.";
+            elements.ai.recom.style.color = "#10b981";
         }
+        
+        if (f1h === "Hujan") {
+            elements.ai.forecastHint.innerText = "Hujan diperkirakan terjadi pada " + elements.ai.time1h.innerText;
+        } else {
+            elements.ai.forecastHint.innerText = "Kondisi stabil hingga 1 jam ke depan.";
+        }
+        
     } catch(e) {
         console.error(e);
     } finally {

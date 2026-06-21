@@ -4,6 +4,7 @@ from flask_cors import CORS
 import pickle
 import pandas as pd
 import os
+import time
 
 app = Flask(__name__, static_folder='frontend', static_url_path='/')
 CORS(app)
@@ -11,6 +12,13 @@ CORS(app)
 # Load Models
 MODEL_PATH = "models/rf_weather_model.pkl"
 models = None
+
+# Global state to store latest data from ESP32
+latest_data = {
+    "sensor_data": None,
+    "predictions": None,
+    "timestamp": 0
+}
 
 if os.path.exists(MODEL_PATH):
     with open(MODEL_PATH, "rb") as f:
@@ -51,26 +59,34 @@ def predict():
         pred_current = rf_current.predict(input_df)[0]
         pred_1h = rf_1h.predict(input_df)[0]
         
+        latest_data["sensor_data"] = {
+            "Temperature": temp,
+            "Humidity": humidity,
+            "Light": light,
+            "Gas": gas,
+            "Latitude": lat,
+            "Longitude": lon
+        }
+        latest_data["predictions"] = {
+            "current_weather": pred_current,
+            "weather_1h_ahead": pred_1h
+        }
+        latest_data["timestamp"] = time.time()
+        
         response = {
             "success": True,
-            "predictions": {
-                "current_weather": pred_current,
-                "weather_1h_ahead": pred_1h
-            },
-            "sensor_echo": {
-                "Temperature": temp,
-                "Humidity": humidity,
-                "Light": light,
-                "Gas": gas,
-                "Latitude": lat,
-                "Longitude": lon
-            }
+            "predictions": latest_data["predictions"],
+            "sensor_echo": latest_data["sensor_data"]
         }
         
         return jsonify(response)
         
     except Exception as e:
         return jsonify({"error": str(e), "success": False}), 400
+
+@app.route('/api/data', methods=['GET'])
+def get_data():
+    return jsonify(latest_data)
 
 @app.route('/', methods=['GET'])
 def index():
