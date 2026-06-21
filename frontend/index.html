@@ -3,130 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediksi Cuaca AI | Sensor Interaktif</title>
-    <!-- Google Fonts: Outfit -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
+    <title>Weather Station Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="background-animation">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
-
-    <div class="container">
-        <header class="glass-panel">
-            <div class="header-content">
-                <h1><i class="fa-solid fa-cloud-bolt"></i> AI Weather Prediction</h1>
-                <p>Sistem Pemantauan dan Klasifikasi Cuaca Berbasis Machine Learning</p>
+    <div class="dashboard-wrapper">
+        <!-- TOP NAVBAR -->
+        <header class="top-navbar">
+            <div class="nav-left">
+                <button class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <div class="logo">
+                    <i class="fa-solid fa-cloud-sun icon-logo"></i>
+                    <h1>Weather Station Dashboard</h1>
+                </div>
             </div>
-            <div class="status-indicator">
-                <div class="pulse-dot"></div>
-                <span>Sensor Active</span>
+            <div class="nav-right">
+                <div class="battery-badge">
+                    <i class="fa-solid fa-battery-full"></i>
+                    <span>Baterai 100%</span>
+                </div>
+                <button class="menu-btn"><i class="fa-solid fa-ellipsis"></i></button>
             </div>
         </header>
 
-        <main>
-            <!-- SENSOR READINGS -->
-            <section class="sensor-grid">
-                <!-- Temperature -->
-                <div class="glass-card sensor-card" id="card-temp">
-                    <div class="card-icon"><i class="fa-solid fa-temperature-half"></i></div>
-                    <div class="card-data">
-                        <h3>Suhu</h3>
-                        <div class="value-wrapper">
-                            <span class="value" id="val-temp">--</span>
-                            <span class="unit">°C</span>
+        <!-- STATUS BAR -->
+        <div class="status-bar">
+            <div class="status-pill status-active"><span class="dot"></span> Server</div>
+            <div class="status-pill status-active"><span class="dot"></span> ESP32</div>
+            <div class="status-pill status-blue"><i class="fa-solid fa-database"></i> Lokal/Direct</div>
+            <div class="status-pill status-yellow"><i class="fa-solid fa-clock"></i> <span id="current-time">--/--/----, --.--.--</span></div>
+            <div class="status-pill status-green" id="refresh-btn" style="cursor: pointer;">
+                <i class="fa-solid fa-rotate"></i> <span id="refresh-counter">10</span>
+            </div>
+        </div>
+
+        <main class="dashboard-grid">
+            <!-- SENSOR CARDS (TOP ROW) -->
+            <div class="sensor-row">
+                <!-- SUHU -->
+                <div class="card sensor-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge temp-theme">
+                            <i class="fa-solid fa-temperature-half"></i>
                         </div>
+                        <span class="status-badge" id="badge-temp">Hangat</span>
+                        <span class="card-title">Suhu</span>
+                    </div>
+                    <div class="card-value">
+                        <span id="val-temp">--</span><span class="unit">°C</span>
+                    </div>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <defs>
+                                <linearGradient id="gradTemp" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#4ade80" />
+                                    <stop offset="50%" stop-color="#eab308" />
+                                    <stop offset="100%" stop-color="#ef4444" />
+                                </linearGradient>
+                            </defs>
+                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                            <path class="gauge-fill" id="gauge-fill-temp" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradTemp)" />
+                            <g class="needle" id="needle-temp">
+                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                <circle cx="50" cy="50" r="4" fill="#334155"/>
+                            </g>
+                        </svg>
                     </div>
                 </div>
 
-                <!-- Humidity -->
-                <div class="glass-card sensor-card" id="card-hum">
-                    <div class="card-icon"><i class="fa-solid fa-droplet"></i></div>
-                    <div class="card-data">
-                        <h3>Kelembapan</h3>
-                        <div class="value-wrapper">
-                            <span class="value" id="val-hum">--</span>
-                            <span class="unit">%</span>
+                <!-- KELEMBAPAN -->
+                <div class="card sensor-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge hum-theme">
+                            <i class="fa-solid fa-droplet"></i>
                         </div>
+                        <span class="status-badge" id="badge-hum">Lembap</span>
+                        <span class="card-title">Kelembapan</span>
+                    </div>
+                    <div class="card-value">
+                        <span id="val-hum">--</span><span class="unit">%</span>
+                    </div>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <defs>
+                                <linearGradient id="gradHum" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#38bdf8" />
+                                    <stop offset="100%" stop-color="#2563eb" />
+                                </linearGradient>
+                            </defs>
+                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                            <path class="gauge-fill" id="gauge-fill-hum" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradHum)" />
+                            <g class="needle" id="needle-hum">
+                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                <circle cx="50" cy="50" r="4" fill="#334155"/>
+                            </g>
+                        </svg>
                     </div>
                 </div>
 
-                <!-- Light -->
-                <div class="glass-card sensor-card" id="card-light">
-                    <div class="card-icon"><i class="fa-solid fa-sun"></i></div>
-                    <div class="card-data">
-                        <h3>Intensitas Cahaya</h3>
-                        <div class="value-wrapper">
-                            <span class="value" id="val-light">--</span>
-                            <span class="unit">Lux</span>
+                <!-- KUALITAS UDARA -->
+                <div class="card sensor-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge gas-theme">
+                            <i class="fa-solid fa-wind"></i>
                         </div>
+                        <span class="status-badge" id="badge-gas">Buruk</span>
+                        <span class="card-title">Kualitas Udara</span>
+                    </div>
+                    <div class="card-value">
+                        <span id="val-gas">--</span><span class="unit"> ppm</span>
+                    </div>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <defs>
+                                <linearGradient id="gradGas" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#4ade80" />
+                                    <stop offset="50%" stop-color="#eab308" />
+                                    <stop offset="100%" stop-color="#ef4444" />
+                                </linearGradient>
+                            </defs>
+                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                            <path class="gauge-fill" id="gauge-fill-gas" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradGas)" />
+                            <g class="needle" id="needle-gas">
+                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                <circle cx="50" cy="50" r="4" fill="#334155"/>
+                            </g>
+                        </svg>
                     </div>
                 </div>
 
-                <!-- Air Quality -->
-                <div class="glass-card sensor-card" id="card-gas">
-                    <div class="card-icon"><i class="fa-solid fa-wind"></i></div>
-                    <div class="card-data">
-                        <h3>Kualitas Udara</h3>
-                        <div class="value-wrapper">
-                            <span class="value" id="val-gas">--</span>
-                            <span class="unit">PPM</span>
+                <!-- INTENSITAS CAHAYA -->
+                <div class="card sensor-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge light-theme">
+                            <i class="fa-solid fa-sun"></i>
+                        </div>
+                        <span class="status-badge" id="badge-light">Mendung</span>
+                        <span class="card-title">Intensitas Cahaya</span>
+                    </div>
+                    <div class="card-value">
+                        <span id="val-light">--</span><span class="unit"> lux</span>
+                    </div>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <defs>
+                                <linearGradient id="gradLight" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#94a3b8" />
+                                    <stop offset="100%" stop-color="#fef08a" />
+                                </linearGradient>
+                            </defs>
+                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                            <path class="gauge-fill" id="gauge-fill-light" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradLight)" />
+                            <g class="needle" id="needle-light">
+                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                <circle cx="50" cy="50" r="4" fill="#334155"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM ROW -->
+            <div class="bottom-row">
+                <!-- GPS LOKASI -->
+                <div class="card gps-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge blue-theme">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <span class="card-title right-align">Lokasi GPS</span>
+                    </div>
+                    <div class="gps-details">
+                        <div class="gps-row">
+                            <span class="gps-label">Lintang</span>
+                            <span class="gps-val" id="val-lat">--</span>
+                        </div>
+                        <div class="gps-row">
+                            <span class="gps-label">Bujur</span>
+                            <span class="gps-val" id="val-lon">--</span>
+                        </div>
+                        <div class="gps-row">
+                            <span class="gps-label">Lokasi</span>
+                            <span class="gps-val">Mendeteksi koordinat satelit...</span>
+                        </div>
+                    </div>
+                    <a href="#" target="_blank" class="maps-btn" id="btn-maps">
+                        <i class="fa-solid fa-map-location-dot"></i> Buka di Google Maps
+                    </a>
+                </div>
+
+                <!-- PREDIKSI AI -->
+                <div class="card ai-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge purple-theme">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <span class="card-title right-align" style="color:#d8b4fe">Prediksi AI</span>
+                    </div>
+                    
+                    <div class="ai-content">
+                        <!-- CURRENT WEATHER -->
+                        <div class="ai-current">
+                            <p class="section-label">Saat ini</p>
+                            <div class="ai-current-main">
+                                <h1 id="ai-curr-temp">--°</h1>
+                                <div class="ai-curr-desc">
+                                    <h2 id="ai-curr-label">Menunggu...</h2>
+                                    <p id="ai-curr-hum">Kelembapan --%</p>
+                                </div>
+                            </div>
+                            
+                            <p class="section-label mt-4">Rekomendasi</p>
+                            <p class="recommendation-text" id="ai-recom">Memuat rekomendasi sistem AI berdasarkan kondisi lingkungan...</p>
+                            
+                            <div class="confidence-badge">
+                                Kepercayaan: <span id="ai-conf">--%</span>
+                            </div>
+                            <p class="sub-text mt-2" id="ai-forecast-hint">Menganalisis pola cuaca...</p>
+                        </div>
+                        
+                        <div class="vertical-divider"></div>
+
+                        <!-- 1 HOUR FORECAST -->
+                        <div class="ai-forecast">
+                            <p class="section-label">1 Jam ke depan</p>
+                            
+                            <div class="forecast-timeline">
+                                <!-- Block 1: Sekarang -->
+                                <div class="forecast-item">
+                                    <p class="fc-time">Sekarang</p>
+                                    <i class="fa-solid fa-cloud fc-icon" id="fc-icon-now"></i>
+                                    <p class="fc-label" id="fc-label-now">--</p>
+                                    <div class="fc-stats">
+                                        <div><span class="lbl">Hujan:</span><br><span class="val">--%</span></div>
+                                        <div><span class="lbl">Yakin:</span><br><span class="val">--%</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Block 2: +30 Min -->
+                                <div class="forecast-item">
+                                    <p class="fc-time" id="fc-time-30m">--:--</p>
+                                    <i class="fa-solid fa-cloud-sun fc-icon"></i>
+                                    <p class="fc-label">Transisi</p>
+                                    <div class="fc-stats">
+                                        <div><span class="lbl">Hujan:</span><br><span class="val">--%</span></div>
+                                        <div><span class="lbl">Yakin:</span><br><span class="val">--%</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Block 3: +1 Hour -->
+                                <div class="forecast-item highlight">
+                                    <p class="fc-time" id="fc-time-1h">--:--</p>
+                                    <i class="fa-solid fa-cloud fc-icon" id="fc-icon-1h"></i>
+                                    <p class="fc-label" id="fc-label-1h">--</p>
+                                    <div class="fc-stats">
+                                        <div><span class="lbl">Hujan:</span><br><span class="val">--%</span></div>
+                                        <div><span class="lbl">Yakin:</span><br><span class="val">--%</span></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- GPS -->
-                <div class="glass-card sensor-card gps-card" id="card-gps">
-                    <div class="card-icon"><i class="fa-solid fa-location-dot"></i></div>
-                    <div class="card-data">
-                        <h3>Lokasi Alat (GPS)</h3>
-                        <div class="value-wrapper gps-values">
-                            <div class="gps-item">Lat: <span id="val-lat">-6.2000</span></div>
-                            <div class="gps-item">Lon: <span id="val-lon">106.8166</span></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- PREDICTION RESULTS -->
-            <section class="prediction-section">
-                <div class="glass-card result-card current-weather">
-                    <h3><i class="fa-solid fa-clock"></i> Cuaca Saat Ini</h3>
-                    <div class="weather-icon-large" id="icon-current">
-                        <i class="fa-solid fa-circle-question"></i>
-                    </div>
-                    <h2 class="weather-label" id="label-current">Menunggu Data...</h2>
-                </div>
-
-                <div class="glass-card result-card forecast-weather">
-                    <h3><i class="fa-solid fa-forward-step"></i> Prediksi 1 Jam Kedepan</h3>
-                    <div class="weather-icon-large" id="icon-1h">
-                        <i class="fa-solid fa-circle-question"></i>
-                    </div>
-                    <h2 class="weather-label" id="label-1h">Menunggu Data...</h2>
-                </div>
-            </section>
-            
-            <div class="action-panel">
-                <button class="glass-btn primary" id="btn-predict">
-                    <i class="fa-solid fa-microchip"></i> Proses Prediksi AI
-                </button>
-                <button class="glass-btn secondary" id="btn-simulate">
-                    <i class="fa-solid fa-rotate"></i> Simulasi Data Baru
-                </button>
             </div>
         </main>
-        
-        <footer>
-            <p>&copy; 2026 Ujian Akhir Semester Machine Learning - Random Forest Model</p>
-        </footer>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

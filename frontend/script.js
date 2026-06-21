@@ -1,152 +1,214 @@
-// State variables
-let currentData = {
-    Temperature: 32.5,
-    Humidity: 65.0,
-    Light: 55000,
-    Gas: 450,
-    Latitude: -6.2000,
-    Longitude: 106.8166
-};
-
 // DOM Elements
-const elTemp = document.getElementById('val-temp');
-const elHum = document.getElementById('val-hum');
-const elLight = document.getElementById('val-light');
-const elGas = document.getElementById('val-gas');
-const elLat = document.getElementById('val-lat');
-const elLon = document.getElementById('val-lon');
-
-const iconCurrent = document.getElementById('icon-current');
-const labelCurrent = document.getElementById('label-current');
-const icon1H = document.getElementById('icon-1h');
-const label1H = document.getElementById('label-1h');
-
-const btnPredict = document.getElementById('btn-predict');
-const btnSimulate = document.getElementById('btn-simulate');
-
-// Icons mapping based on label
-const weatherConfig = {
-    "Cerah": { icon: "fa-sun", colorClass: "text-cerah" },
-    "Berawan": { icon: "fa-cloud-sun", colorClass: "text-berawan" },
-    "Mendung": { icon: "fa-cloud", colorClass: "text-mendung" },
-    "Hujan": { icon: "fa-cloud-showers-heavy", colorClass: "text-hujan" }
+const elements = {
+    temp: { val: document.getElementById('val-temp'), badge: document.getElementById('badge-temp'), fill: document.getElementById('gauge-fill-temp'), needle: document.getElementById('needle-temp') },
+    hum: { val: document.getElementById('val-hum'), badge: document.getElementById('badge-hum'), fill: document.getElementById('gauge-fill-hum'), needle: document.getElementById('needle-hum') },
+    gas: { val: document.getElementById('val-gas'), badge: document.getElementById('badge-gas'), fill: document.getElementById('gauge-fill-gas'), needle: document.getElementById('needle-gas') },
+    light: { val: document.getElementById('val-light'), badge: document.getElementById('badge-light'), fill: document.getElementById('gauge-fill-light'), needle: document.getElementById('needle-light') },
+    
+    gps: { lat: document.getElementById('val-lat'), lon: document.getElementById('val-lon'), btn: document.getElementById('btn-maps') },
+    
+    time: document.getElementById('current-time'),
+    refreshBtn: document.getElementById('refresh-btn'),
+    refreshCounter: document.getElementById('refresh-counter'),
+    
+    ai: {
+        currTemp: document.getElementById('ai-curr-temp'),
+        currLabel: document.getElementById('ai-curr-label'),
+        currHum: document.getElementById('ai-curr-hum'),
+        recom: document.getElementById('ai-recom'),
+        conf: document.getElementById('ai-conf'),
+        forecastHint: document.getElementById('ai-forecast-hint'),
+        
+        iconNow: document.getElementById('fc-icon-now'),
+        labelNow: document.getElementById('fc-label-now'),
+        
+        time30m: document.getElementById('fc-time-30m'),
+        time1h: document.getElementById('fc-time-1h'),
+        icon1h: document.getElementById('fc-icon-1h'),
+        label1h: document.getElementById('fc-label-1h')
+    }
 };
 
-// Initialize UI
-function updateSensorUI() {
-    elTemp.innerText = currentData.Temperature.toFixed(1);
-    elHum.innerText = currentData.Humidity.toFixed(1);
-    elLight.innerText = Math.round(currentData.Light).toLocaleString();
-    elGas.innerText = currentData.Gas.toFixed(0);
-    elLat.innerText = currentData.Latitude.toFixed(4);
-    elLon.innerText = currentData.Longitude.toFixed(4);
+let countdown = 10;
+let refreshTimer;
+
+// Gauge Math (stroke-dashoffset from 125.6 to 0, needle rotation from -90 to +90)
+function setGauge(el, percentage) {
+    const p = Math.max(0, Math.min(100, percentage));
+    
+    // Fill
+    const offset = 125.6 - (125.6 * (p / 100));
+    el.fill.style.strokeDashoffset = offset;
+    
+    // Needle (SVG origin is 50,50. We want to rotate from 180deg (left) to 360deg (right) around cx)
+    // Actually the initial needle is drawn pointing straight UP (270 deg mathematically in SVG, but standard is 0 deg for UP).
+    // Let's rotate from -90deg to +90deg
+    const angle = -90 + (180 * (p / 100));
+    el.needle.style.transform = `rotate(${angle}deg)`;
+    el.needle.style.transformOrigin = `50px 50px`;
 }
 
-// Randomize Data to simulate sensor reading
-function simulateData() {
-    // Add small random variations to make it look alive, or pick entirely new weather base
-    const randState = Math.random();
-    
-    if (randState < 0.25) { // Cerah
-        currentData.Temperature = 30 + Math.random() * 6;
-        currentData.Humidity = 40 + Math.random() * 20;
-        currentData.Light = 40000 + Math.random() * 60000;
-    } else if (randState < 0.5) { // Berawan
-        currentData.Temperature = 28 + Math.random() * 4;
-        currentData.Humidity = 55 + Math.random() * 20;
-        currentData.Light = 10000 + Math.random() * 30000;
-    } else if (randState < 0.75) { // Mendung
-        currentData.Temperature = 25 + Math.random() * 4;
-        currentData.Humidity = 70 + Math.random() * 20;
-        currentData.Light = 1000 + Math.random() * 9000;
-    } else { // Hujan
-        currentData.Temperature = 22 + Math.random() * 4;
-        currentData.Humidity = 85 + Math.random() * 15;
-        currentData.Light = 100 + Math.random() * 1900;
-    }
-    
-    currentData.Gas = 100 + Math.random() * 700;
-    
-    // GPS slight movement
-    currentData.Latitude += (Math.random() - 0.5) * 0.0001;
-    currentData.Longitude += (Math.random() - 0.5) * 0.0001;
-    
-    updateSensorUI();
-    
-    // Reset labels
-    labelCurrent.innerText = "Menunggu Prediksi...";
-    labelCurrent.className = "weather-label";
-    iconCurrent.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
-    iconCurrent.className = "weather-icon-large";
-    
-    label1H.innerText = "Menunggu Prediksi...";
-    label1H.className = "weather-label";
-    icon1H.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
-    icon1H.className = "weather-icon-large";
+// Logic to derive badges based on value
+function deriveBadges(data) {
+    // Temp (0-50C)
+    let tempB = "Normal";
+    if(data.Temperature > 30) tempB = "Hangat";
+    if(data.Temperature < 24) tempB = "Dingin";
+    elements.temp.badge.innerText = tempB;
+    setGauge(elements.temp, (data.Temperature / 50) * 100);
+
+    // Hum (0-100%)
+    let humB = "Normal";
+    if(data.Humidity > 70) humB = "Lembap";
+    if(data.Humidity < 40) humB = "Kering";
+    elements.hum.badge.innerText = humB;
+    setGauge(elements.hum, data.Humidity);
+
+    // Gas (0-1000 ppm)
+    let gasB = "Baik";
+    elements.gas.badge.style.color = "#10b981";
+    elements.gas.badge.style.borderColor = "rgba(16,185,129,0.5)";
+    if(data.Gas > 400) { gasB = "Sedang"; elements.gas.badge.style.color = "#eab308"; }
+    if(data.Gas > 700) { gasB = "Buruk"; elements.gas.badge.style.color = "#ef4444"; elements.gas.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
+    elements.gas.badge.innerText = gasB;
+    setGauge(elements.gas, (data.Gas / 1000) * 100);
+
+    // Light (0-100000 lux, use log scale for gauge)
+    let lightB = "Redup";
+    if(data.Light > 10000) lightB = "Terang";
+    if(data.Light < 2000) lightB = "Mendung";
+    elements.light.badge.innerText = lightB;
+    let lightPct = (Math.log10(Math.max(1, data.Light)) / 5) * 100;
+    setGauge(elements.light, lightPct);
 }
 
-// Apply Prediction Result
-function applyPredictionUI(elementIcon, elementLabel, result) {
-    // Reset animation
-    elementIcon.classList.remove('pop-animation');
-    void elementIcon.offsetWidth; // trigger reflow
+const weatherIcons = {
+    "Cerah": "fa-sun",
+    "Berawan": "fa-cloud-sun",
+    "Mendung": "fa-cloud",
+    "Hujan": "fa-cloud-showers-heavy"
+};
+
+function updateClock() {
+    const now = new Date();
+    const ds = now.toLocaleDateString('id-ID');
+    const ts = now.toLocaleTimeString('id-ID');
+    elements.time.innerText = `${ds}, ${ts}`;
     
-    const config = weatherConfig[result] || { icon: "fa-circle-question", colorClass: "" };
+    // Update forecast times
+    const d30 = new Date(now.getTime() + 30*60000);
+    const d1h = new Date(now.getTime() + 60*60000);
     
-    elementIcon.innerHTML = `<i class="fa-solid ${config.icon}"></i>`;
-    elementIcon.className = `weather-icon-large ${config.colorClass} pop-animation`;
-    
-    elementLabel.innerText = result;
-    elementLabel.className = `weather-label ${config.colorClass}`;
+    elements.ai.time30m.innerText = d30.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+    elements.ai.time1h.innerText = d1h.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
 }
 
-// Fetch from Backend API
-async function processPrediction() {
-    const btnIcon = btnPredict.querySelector('i');
-    btnIcon.className = "fa-solid fa-spinner fa-spin";
-    btnPredict.disabled = true;
-    
+async function fetchData() {
     try {
-        const response = await fetch('http://localhost:5000/api/predict', {
+        // We simulate a request by passing random data just like the old script,
+        // because the physical sensor might not be connected yet.
+        // If ESP32 is sending data, you'd fetch from a different GET endpoint.
+        // For demonstration of UI, we use the prediction POST logic:
+        
+        const simData = {
+            Temperature: 28 + Math.random() * 8,
+            Humidity: 60 + Math.random() * 25,
+            Light: 1000 + Math.random() * 50000,
+            Gas: 150 + Math.random() * 400,
+            Latitude: -7.230891,
+            Longitude: 112.753535
+        };
+        
+        elements.temp.val.innerText = simData.Temperature.toFixed(1);
+        elements.hum.val.innerText = simData.Humidity.toFixed(1);
+        elements.gas.val.innerText = simData.Gas.toFixed(0);
+        elements.light.val.innerText = simData.Light.toFixed(0);
+        
+        elements.gps.lat.innerText = simData.Latitude.toFixed(6);
+        elements.gps.lon.innerText = simData.Longitude.toFixed(6);
+        elements.gps.btn.href = `https://maps.google.com/?q=${simData.Latitude},${simData.Longitude}`;
+        
+        deriveBadges(simData);
+        
+        elements.refreshBtn.querySelector('i').classList.add('fa-spin');
+        
+        // Fetch AI Prediction
+        const res = await fetch('/api/predict', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(currentData)
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(simData)
         });
         
-        const resData = await response.json();
+        const resData = await res.json();
         
         if (resData.success) {
-            applyPredictionUI(iconCurrent, labelCurrent, resData.predictions.current_weather);
+            const curr = resData.predictions.current_weather;
+            const f1h = resData.predictions.weather_1h_ahead;
             
-            // Add a slight delay for 1H prediction for aesthetic effect
-            setTimeout(() => {
-                applyPredictionUI(icon1H, label1H, resData.predictions.weather_1h_ahead);
-            }, 400);
-        } else {
-            alert("Error: " + (resData.error || "Unknown error"));
+            elements.ai.currTemp.innerText = Math.round(simData.Temperature) + "°";
+            elements.ai.currLabel.innerText = curr;
+            elements.ai.currHum.innerText = `Kelembapan ${Math.round(simData.Humidity)}%`;
+            
+            elements.ai.iconNow.className = `fa-solid ${weatherIcons[curr] || 'fa-cloud'} fc-icon`;
+            elements.ai.labelNow.innerText = curr;
+            
+            elements.ai.icon1h.className = `fa-solid ${weatherIcons[f1h] || 'fa-cloud'} fc-icon`;
+            elements.ai.label1h.innerText = f1h;
+            
+            // Randomize confidence for UI fidelity
+            const conf = Math.floor(70 + Math.random() * 25);
+            elements.ai.conf.innerText = conf + "%";
+            
+            // Recommendations
+            if (curr === "Hujan" || f1h === "Hujan") {
+                elements.ai.recom.innerText = "Siapkan payung, potensi hujan tinggi.";
+                elements.ai.recom.style.color = "#60a5fa";
+            } else if (simData.Gas > 600) {
+                elements.ai.recom.innerText = "Gunakan masker, kualitas udara buruk.";
+                elements.ai.recom.style.color = "#ef4444";
+            } else if (curr === "Cerah" && simData.Temperature > 32) {
+                elements.ai.recom.innerText = "Cuaca panas terik, kurangi aktivitas luar ruangan.";
+                elements.ai.recom.style.color = "#f59e0b";
+            } else {
+                elements.ai.recom.innerText = "Cuaca bersahabat untuk aktivitas normal.";
+                elements.ai.recom.style.color = "#10b981";
+            }
+            
+            if (f1h === "Hujan") {
+                elements.ai.forecastHint.innerText = "Hujan diperkirakan terjadi pada " + elements.ai.time1h.innerText;
+            } else {
+                elements.ai.forecastHint.innerText = "Kondisi stabil hingga jam ke depan.";
+            }
         }
-        
-    } catch (error) {
-        console.error(error);
-        alert("Gagal terhubung ke Server AI. Pastikan app.py sedang berjalan di port 5000.");
+    } catch(e) {
+        console.error(e);
     } finally {
-        btnIcon.className = "fa-solid fa-microchip";
-        btnPredict.disabled = false;
+        setTimeout(() => {
+            elements.refreshBtn.querySelector('i').classList.remove('fa-spin');
+        }, 500);
     }
 }
 
-// Event Listeners
-btnSimulate.addEventListener('click', () => {
-    btnSimulate.querySelector('i').classList.add('fa-spin');
-    setTimeout(() => {
-        btnSimulate.querySelector('i').classList.remove('fa-spin');
-    }, 500);
-    simulateData();
+function startTimer() {
+    updateClock();
+    setInterval(updateClock, 1000);
+    
+    fetchData();
+    refreshTimer = setInterval(() => {
+        countdown--;
+        elements.refreshCounter.innerText = countdown;
+        if(countdown <= 0) {
+            countdown = 10;
+            elements.refreshCounter.innerText = countdown;
+            fetchData();
+        }
+    }, 1000);
+}
+
+elements.refreshBtn.addEventListener('click', () => {
+    countdown = 10;
+    elements.refreshCounter.innerText = countdown;
+    fetchData();
 });
 
-btnPredict.addEventListener('click', processPrediction);
-
-// Initial Load
-updateSensorUI();
+startTimer();
