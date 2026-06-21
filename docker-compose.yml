@@ -2,6 +2,7 @@ name: "ai-weather-station"
 services:
   web-ai:
     build: .
+    image: ai-weather-station:latest
     container_name: weather-station-ai
     restart: unless-stopped
     ports:
@@ -10,3 +11,21 @@ services:
       # Mount folder data dan models agar data tidak hilang saat container restart
       - ./data:/app/data
       - ./models:/app/models
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+    - arm
+  main: web-ai
+  author: "User"
+  category: "Utilities"
+  description:
+    en_us: "Dasbor Stasiun Cuaca Berbasis AI (Random Forest)"
+  developer: "Local"
+  icon: "https://cdn-icons-png.flaticon.com/512/1163/1163661.png"
+  index: "/"
+  port_map: "5000"
+  title:
+    custom: "Weather AI"
+    en_us: "Weather AI"
