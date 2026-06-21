@@ -22,11 +22,20 @@ const elements = {
         
         iconNow: document.getElementById('fc-icon-now'),
         labelNow: document.getElementById('fc-label-now'),
+        rainNow: document.getElementById('fc-rain-now'),
+        confNow: document.getElementById('fc-conf-now'),
         
         time30m: document.getElementById('fc-time-30m'),
+        icon30m: document.getElementById('fc-icon-30m'),
+        label30m: document.getElementById('fc-label-30m'),
+        rain30m: document.getElementById('fc-rain-30m'),
+        conf30m: document.getElementById('fc-conf-30m'),
+        
         time1h: document.getElementById('fc-time-1h'),
         icon1h: document.getElementById('fc-icon-1h'),
-        label1h: document.getElementById('fc-label-1h')
+        label1h: document.getElementById('fc-label-1h'),
+        rain1h: document.getElementById('fc-rain-1h'),
+        conf1h: document.getElementById('fc-conf-1h')
     }
 };
 
@@ -193,9 +202,20 @@ async function fetchData() {
         elements.ai.icon1h.className = `fa-solid ${weatherIcons[f1h] || 'fa-cloud'} fc-icon`;
         elements.ai.label1h.innerText = f1h;
         
-        // Dynamic confidence
-        const conf = Math.floor(70 + (resData.timestamp % 25));
-        elements.ai.conf.innerText = conf + "%";
+        // Populate stats for 1 Hour Forecast Blocks
+        elements.ai.rainNow.innerText = resData.predictions.rain_curr + "%";
+        elements.ai.confNow.innerText = resData.predictions.conf_curr + "%";
+        
+        // 30m is transitional (interpolate slightly)
+        let rain30 = Math.floor((resData.predictions.rain_curr + resData.predictions.rain_1h) / 2);
+        let conf30 = Math.floor((resData.predictions.conf_curr + resData.predictions.conf_1h) / 2);
+        elements.ai.rain30m.innerText = rain30 + "%";
+        elements.ai.conf30m.innerText = conf30 + "%";
+        
+        elements.ai.rain1h.innerText = resData.predictions.rain_1h + "%";
+        elements.ai.conf1h.innerText = resData.predictions.conf_1h + "%";
+        
+        elements.ai.conf.innerText = resData.predictions.conf_curr + "%";
         
         // Recommendations
         if (curr === "Hujan" || f1h === "Hujan") {

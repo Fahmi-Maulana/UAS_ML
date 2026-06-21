@@ -62,6 +62,20 @@ def predict():
         pred_current = rf_current.predict(input_df)[0]
         pred_1h = rf_1h.predict(input_df)[0]
         
+        proba_current = rf_current.predict_proba(input_df)[0]
+        proba_1h = rf_1h.predict_proba(input_df)[0]
+        
+        def extract_probs(classes, proba):
+            conf = int(max(proba) * 100)
+            rain_prob = 0
+            classes_list = list(classes)
+            if "Hujan" in classes_list:
+                rain_prob = int(proba[classes_list.index("Hujan")] * 100)
+            return conf, rain_prob
+            
+        conf_curr, rain_curr = extract_probs(rf_current.classes_, proba_current)
+        conf_1h, rain_1h = extract_probs(rf_1h.classes_, proba_1h)
+        
         latest_data["sensor_data"] = {
             "Temperature": temp,
             "Humidity": humidity,
@@ -72,7 +86,11 @@ def predict():
         }
         latest_data["predictions"] = {
             "current_weather": pred_current,
-            "weather_1h_ahead": pred_1h
+            "weather_1h_ahead": pred_1h,
+            "conf_curr": conf_curr,
+            "rain_curr": rain_curr,
+            "conf_1h": conf_1h,
+            "rain_1h": rain_1h
         }
         latest_data["timestamp"] = time.time()
         
