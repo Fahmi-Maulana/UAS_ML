@@ -49,7 +49,7 @@ const elements = {
     }
 };
 
-let countdown = 10;
+let countdown = 3;
 let refreshTimer;
 
 // Gauge Math (stroke-dashoffset from 125.6 to 0, needle rotation from -90 to +90)
@@ -88,15 +88,15 @@ function deriveBadges(data) {
     elements.hum.badge.innerText = humB;
     setGauge(elements.hum, data.Humidity);
 
-    // Kualitas Udara MQ135 (Estimasi eCO2 ppm)
-    // EPA/ASHRAE: < 1000 Baik, 1000-2000 Sedang, > 2000 Buruk
+    // Kualitas Udara MQ135 (Standar AQI 0-500 ppm)
+    // EPA AQI: < 50 Baik, 51-150 Sedang, > 150 Buruk
     let gasB = "Baik";
     elements.gas.badge.style.color = "#10b981";
     elements.gas.badge.style.borderColor = "rgba(16,185,129,0.5)";
-    if(data.Gas > 1000) { gasB = "Sedang"; elements.gas.badge.style.color = "#eab308"; elements.gas.badge.style.borderColor = "rgba(234,179,8,0.5)"; }
-    if(data.Gas > 2000) { gasB = "Buruk"; elements.gas.badge.style.color = "#ef4444"; elements.gas.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
+    if(data.Gas > 50) { gasB = "Sedang"; elements.gas.badge.style.color = "#eab308"; elements.gas.badge.style.borderColor = "rgba(234,179,8,0.5)"; }
+    if(data.Gas > 150) { gasB = "Buruk"; elements.gas.badge.style.color = "#ef4444"; elements.gas.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
     elements.gas.badge.innerText = gasB;
-    setGauge(elements.gas, (data.Gas / 3000) * 100); // Scale up to 3000 for gauge
+    setGauge(elements.gas, (data.Gas / 500) * 100); // Scale up to 500 for gauge
 
     // Cahaya Lux
     let lightB = "Pagi/Sore";
@@ -349,7 +349,7 @@ function startTimer() {
         countdown--;
         elements.refreshCounter.innerText = countdown;
         if(countdown <= 0) {
-            countdown = 10;
+            countdown = 3;
             elements.refreshCounter.innerText = countdown;
             fetchData();
         }
@@ -357,7 +357,7 @@ function startTimer() {
 }
 
 elements.refreshBtn.addEventListener('click', () => {
-    countdown = 10;
+    countdown = 3;
     elements.refreshCounter.innerText = countdown;
     fetchData();
 });

@@ -42,9 +42,9 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, PIN
 
 WiFiManager wm;
 
-// Timer untuk Interval Pengiriman Data (misal: kirim tiap 10 detik)
+// Timer untuk Interval Pengiriman Data (misal: kirim tiap 3 detik)
 unsigned long previousMillis = 0;
-const long interval = 10000;
+const long interval = 3000;
 
 String lastPrediction = "Tunggu AI...";
 float mq135_R0 = 76.63; // Default R0 yang akan ditimpa oleh kalibrasi otomatis
@@ -183,19 +183,13 @@ void loop() {
     // Baca Data Gas (MQ135)
     int rawGas = analogRead(PIN_MQ135_ADC);
     
-    // Perhitungan Estimasi eCO2 MQ135 berdasarkan datasheet (kurva CO2)
-    float vRL_gas = (rawGas / 4095.0) * 3.3;
-    float gasPPM = 400.0; // Baseline udara segar
-    if (vRL_gas > 0.1) {
-        float rS = ((3.3 * 10.0) / vRL_gas) - 10.0;
-        float ratio = rS / mq135_R0;
-        // Kurva eCO2 (a = 110.47, b = -2.862)
-        gasPPM = 110.47 * pow(ratio, -2.862);
-    }
+    // Konversi linear sederhana ke skala Kualitas Udara (AQI 0-500 PPM)
+    // Berdasarkan rentang ADC ESP32 (0-4095)
+    float gasPPM = (rawGas / 4095.0) * 500.0;
     
-    // Safety clamp (mencegah ledakan angka)
-    if (gasPPM < 400) gasPPM = 400;
-    if (gasPPM > 10000) gasPPM = 10000;
+    // Safety clamp (mencegah angka di luar rentang 0-500)
+    if (gasPPM < 0) gasPPM = 0;
+    if (gasPPM > 500) gasPPM = 500;
 
     // Baca Data Baterai dari INA219
     float busvoltage = ina219.getBusVoltage_V();
