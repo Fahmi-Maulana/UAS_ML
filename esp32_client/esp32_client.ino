@@ -11,6 +11,7 @@
 // Sensor Libraries
 #include <Adafruit_SHT31.h>
 #include <BH1750.h>
+#include <Adafruit_INA219.h>
 #include <TinyGPSPlus.h>
 #include <U8g2lib.h>
 
@@ -32,6 +33,7 @@ const char* serverUrl = "https://rf.ijuloss.my.id/api/predict";
 // ===================== OBJEK SENSOR =====================
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 BH1750 lightMeter;
+Adafruit_INA219 ina219;
 TinyGPSPlus gps;
 HardwareSerial SerialGPS(2); // Menggunakan UART2 (Pin 16, 17)
 
@@ -44,6 +46,8 @@ WiFiManager wm;
 unsigned long previousMillis = 0;
 const long interval = 10000;
 
+String lastPrediction = "Tunggu AI...";
+
 void setup() {
   Serial.begin(115200);
   SerialGPS.begin(GPS_BAUD, SERIAL_8N1, PIN_GPS_RX, PIN_GPS_TX);
@@ -54,6 +58,13 @@ void setup() {
   // Inisialisasi I2C
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
+  // Inisialisasi INA219 (Sensor Baterai)
+  if (!ina219.begin()) {
+    Serial.println("Gagal menemukan sensor INA219");
+  } else {
+    Serial.println("INA219 siap!");
+  }
+  
   // Inisialisasi Layar OLED
   u8g2.begin();
   u8g2.clearBuffer();
@@ -88,6 +99,7 @@ void setup() {
 
   // Konfigurasi ArduinoOTA
   ArduinoOTA.setHostname("Cuaca-AI-ESP32");
+  ArduinoOTA.setPassword("admin123"); // Password wajib untuk Arduino IDE versi baru
   ArduinoOTA.onStart([]() {
     u8g2.clearBuffer();
     u8g2.drawStr(0, 15, "OTA Update Start...");
@@ -140,11 +152,28 @@ void loop() {
     float hum = sht31.readHumidity();
     float light = lightMeter.readLightLevel();
     
-    // Baca Analog MQ135 (0 - 4095 pada ESP32)
-    // Bisa dikalibrasi sesuai kebutuhan, ini hanya raw value / konversi sederhana
+    // Baca Data Gas (MQ135)
     int rawGas = analogRead(PIN_MQ135_ADC);
-    float gasPPM = map(rawGas, 0, 4095, 0, 1000); // Penyesuaian Dummy Mapping
+    
+    // Perhitungan Estimasi eCO2 MQ135 berdasarkan datasheet (kurva CO2)
+    // Asumsi: ADC 12-bit (0-4095), VCC 3.3V, RL 10kOhm, R0 76.63 (Typical Fresh Air)
+    float vRL = (rawGas / 4095.0) * 3.3;
+    float gasPPM = 400.0; // Default fresh air
+    if (vRL > 0.1) {
+        float rS = ((3.3 * 10.0) / vRL) - 10.0;
+        float r0 = 76.63; 
+        float ratio = rS / r0;
+        // Kurva eCO2 (a = 110.47, b = -2.862)
+        gasPPM = 110.47 * pow(ratio, -2.862);
+    }
 
+    // Baca Data Baterai dari INA219
+    float busvoltage = ina219.getBusVoltage_V();
+    float shuntvoltage = ina219.getShuntVoltage_mV();
+    float loadvoltage = busvoltage + (shuntvoltage / 1000); // Tegangan Baterai
+    float current_mA = ina219.getCurrent_mA(); // Arus Baterai (positif=charging, negatif=discharging)
+    float power_mW = ina219.getPower_mW(); // Daya
+    
     // Baca Data GPS
     float lat = 0.0;
     float lon = 0.0;
@@ -153,17 +182,35 @@ void loop() {
       lon = gps.location.lng();
     }
 
-    // Tampilkan di OLED
+    // Tampilkan di OLED dengan desain Proporsional
     u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_ncenB08_tr);
+    
+    // --- TOP BAR ---
+    u8g2.setFont(u8g2_font_5x8_tr);
     if (WiFi.status() == WL_CONNECTED) {
-      u8g2.setCursor(0, 10); u8g2.print("IP: "); u8g2.print(WiFi.localIP());
+      u8g2.setCursor(0, 8); u8g2.print("IP: "); u8g2.print(WiFi.localIP());
     } else {
-      u8g2.setCursor(0, 10); u8g2.print("AP: Cuaca_AI_AP");
+      u8g2.setCursor(0, 8); u8g2.print("AP: Cuaca_AI_AP");
     }
-    u8g2.setCursor(0, 25); u8g2.print("T:"); u8g2.print(temp, 1); u8g2.print("C H:"); u8g2.print(hum, 0); u8g2.print("%");
-    u8g2.setCursor(0, 40); u8g2.print("L:"); u8g2.print(light, 0); u8g2.print("lx G:"); u8g2.print(gasPPM, 0);
-    u8g2.setCursor(0, 55); u8g2.print("Mengirim data...");
+    // Info Baterai
+    u8g2.setCursor(100, 8); u8g2.print(loadvoltage, 1); u8g2.print("V");
+    u8g2.drawLine(0, 10, 128, 10);
+
+    // --- MAIN SENSORS ---
+    u8g2.setFont(u8g2_font_6x12_tr);
+    u8g2.setCursor(0, 24); u8g2.print("Suhu :"); u8g2.print(temp, 1); u8g2.print(" C");
+    u8g2.setCursor(0, 36); u8g2.print("Lembap:"); u8g2.print(hum, 0); u8g2.print(" %");
+    
+    u8g2.setCursor(72, 24); u8g2.print("Lx:"); u8g2.print(light, 0);
+    u8g2.setCursor(72, 36); u8g2.print("AQ:"); u8g2.print(gasPPM, 0);
+
+    u8g2.drawLine(0, 42, 128, 42);
+
+    // --- BOTTOM BAR ---
+    u8g2.setFont(u8g2_font_ncenB08_tr); // Font yang lebih tebal
+    u8g2.setCursor(0, 56); 
+    u8g2.print("AI: "); u8g2.print(lastPrediction);
+    
     u8g2.sendBuffer();
 
     // --- KIRIM DATA KE SERVER CASAOS ---
@@ -183,6 +230,9 @@ void loop() {
       doc["Gas"] = gasPPM;
       doc["Latitude"] = lat;
       doc["Longitude"] = lon;
+      doc["BatVoltage"] = loadvoltage;
+      doc["BatCurrent"] = current_mA;
+      doc["BatPower"] = power_mW;
 
       String requestBody;
       serializeJson(doc, requestBody);
@@ -200,16 +250,21 @@ void loop() {
         String payload = http.getString();
         Serial.println("Balasan Server: " + payload);
         
-        // Parse JSON balasan untuk memeriksa apakah ada antrean perintah
+        // Parse JSON balasan untuk memeriksa prediksi dan perintah
         StaticJsonDocument<512> responseDoc;
         DeserializationError error = deserializeJson(responseDoc, payload);
         if (!error) {
+          if (responseDoc.containsKey("predictions")) {
+              lastPrediction = responseDoc["predictions"]["current_weather"].as<String>();
+          }
+            
           JsonArray commands = responseDoc["commands"];
           for (JsonVariant v : commands) {
             String cmd = v.as<String>();
             if (cmd == "reset_wifi") {
               Serial.println("Menerima perintah: RESET WIFI. Menghapus memori jaringan...");
               u8g2.clearBuffer();
+              u8g2.setFont(u8g2_font_ncenB08_tr);
               u8g2.drawStr(0, 30, "RESET WIFI...");
               u8g2.sendBuffer();
               wm.resetSettings();
@@ -218,10 +273,6 @@ void loop() {
             }
           }
         }
-        
-        u8g2.setCursor(0, 55); 
-        u8g2.print("Terkirim (HTTP "); u8g2.print(httpResponseCode); u8g2.print(")");
-        u8g2.sendBuffer();
 
       } else {
         Serial.print("Error code: ");

@@ -13,18 +13,36 @@
         <!-- TOP NAVBAR -->
         <header class="top-navbar">
             <div class="nav-left">
-                <button class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <button class="menu-btn" id="btn-menu-main"><i class="fa-solid fa-bars"></i></button>
                 <div class="logo">
                     <i class="fa-solid fa-cloud-sun icon-logo"></i>
                     <h1>Weather Station Dashboard</h1>
                 </div>
             </div>
             <div class="nav-right">
-                <div class="battery-badge">
-                    <i class="fa-solid fa-battery-full"></i>
-                    <span>Baterai 100%</span>
+                <div class="battery-container" style="position: relative;">
+                    <div class="battery-badge" id="badge-battery" style="cursor: pointer;" title="Klik untuk info baterai">
+                        <i class="fa-solid fa-battery-full" id="bat-icon"></i>
+                        <span id="bat-text">Baterai --%</span>
+                    </div>
+                    
+                    <!-- Popup Baterai -->
+                    <div class="battery-popup" id="bat-popup" style="display: none;">
+                        <div class="bp-row bp-vol">
+                            <span class="bp-label">Tegangan</span>
+                            <span class="bp-val" id="bp-v">-- V</span>
+                        </div>
+                        <div class="bp-row bp-cur">
+                            <span class="bp-label">Arus</span>
+                            <span class="bp-val" id="bp-i">-- mA</span>
+                        </div>
+                        <div class="bp-row bp-pow">
+                            <span class="bp-label">Daya</span>
+                            <span class="bp-val" id="bp-p">-- mW</span>
+                        </div>
+                    </div>
                 </div>
-                <button class="menu-btn"><i class="fa-solid fa-ellipsis"></i></button>
+                <button class="menu-btn" id="btn-menu-more"><i class="fa-solid fa-ellipsis"></i></button>
             </div>
         </header>
 
@@ -189,7 +207,7 @@
                         </div>
                         <div class="gps-row">
                             <span class="gps-label">Lokasi</span>
-                            <span class="gps-val">Mendeteksi koordinat satelit...</span>
+                            <span class="gps-val" id="val-address" style="line-height: 1.4; font-size: 0.85rem;">Mendeteksi koordinat satelit...</span>
                         </div>
                     </div>
                     <a href="#" target="_blank" class="maps-btn" id="btn-maps">

@@ -43,9 +43,12 @@ def predict():
         light = float(data.get('Light', 0))
         gas = float(data.get('Gas', 0))
         
-        # We can accept GPS coordinates but they aren't used in the model
         lat = data.get('Latitude', 0.0)
         lon = data.get('Longitude', 0.0)
+        
+        bat_v = float(data.get('BatVoltage', 0.0))
+        bat_i = float(data.get('BatCurrent', 0.0))
+        bat_p = float(data.get('BatPower', 0.0))
         
         # Prepare for prediction
         input_df = pd.DataFrame([{
@@ -82,7 +85,10 @@ def predict():
             "Light": light,
             "Gas": gas,
             "Latitude": lat,
-            "Longitude": lon
+            "Longitude": lon,
+            "BatVoltage": bat_v,
+            "BatCurrent": bat_i,
+            "BatPower": bat_p
         }
         latest_data["predictions"] = {
             "current_weather": pred_current,

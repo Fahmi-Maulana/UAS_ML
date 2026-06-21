@@ -5,12 +5,22 @@ const elements = {
     gas: { val: document.getElementById('val-gas'), badge: document.getElementById('badge-gas'), fill: document.getElementById('gauge-fill-gas'), needle: document.getElementById('needle-gas') },
     light: { val: document.getElementById('val-light'), badge: document.getElementById('badge-light'), fill: document.getElementById('gauge-fill-light'), needle: document.getElementById('needle-light') },
     
-    gps: { lat: document.getElementById('val-lat'), lon: document.getElementById('val-lon'), btn: document.getElementById('btn-maps') },
+    gps: { lat: document.getElementById('val-lat'), lon: document.getElementById('val-lon'), address: document.getElementById('val-address'), btn: document.getElementById('btn-maps') },
     
     time: document.getElementById('current-time'),
     refreshBtn: document.getElementById('refresh-btn'),
     refreshCounter: document.getElementById('refresh-counter'),
     resetWifiBtn: document.getElementById('reset-wifi-btn'),
+    
+    battery: {
+        badge: document.getElementById('badge-battery'),
+        text: document.getElementById('bat-text'),
+        icon: document.getElementById('bat-icon'),
+        popup: document.getElementById('bat-popup'),
+        v: document.getElementById('bp-v'),
+        i: document.getElementById('bp-i'),
+        p: document.getElementById('bp-p')
+    },
     
     ai: {
         currTemp: document.getElementById('ai-curr-temp'),
@@ -58,35 +68,42 @@ function setGauge(el, percentage) {
     el.needle.style.transformOrigin = `50px 50px`;
 }
 
-// Logic to derive badges based on value
+// Logic to derive badges based on scientific references
 function deriveBadges(data) {
-    // Temp (0-50C)
+    // Suhu (ASHRAE/WHO Tropis)
     let tempB = "Normal";
-    if(data.Temperature > 30) tempB = "Hangat";
-    if(data.Temperature < 24) tempB = "Dingin";
+    elements.temp.badge.style.color = "#10b981";
+    elements.temp.badge.style.borderColor = "rgba(16,185,129,0.5)";
+    if(data.Temperature > 28) { tempB = "Panas"; elements.temp.badge.style.color = "#ef4444"; elements.temp.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
+    else if(data.Temperature < 24) { tempB = "Sejuk"; elements.temp.badge.style.color = "#38bdf8"; elements.temp.badge.style.borderColor = "rgba(56,189,248,0.5)"; }
     elements.temp.badge.innerText = tempB;
     setGauge(elements.temp, (data.Temperature / 50) * 100);
 
-    // Hum (0-100%)
-    let humB = "Normal";
-    if(data.Humidity > 70) humB = "Lembap";
-    if(data.Humidity < 40) humB = "Kering";
+    // Kelembapan (BMKG/ASHRAE Ideal: 40-60%)
+    let humB = "Nyaman";
+    elements.hum.badge.style.color = "#10b981";
+    elements.hum.badge.style.borderColor = "rgba(16,185,129,0.5)";
+    if(data.Humidity > 60) { humB = "Lembap"; elements.hum.badge.style.color = "#38bdf8"; elements.hum.badge.style.borderColor = "rgba(56,189,248,0.5)"; }
+    else if(data.Humidity < 40) { humB = "Kering"; elements.hum.badge.style.color = "#eab308"; elements.hum.badge.style.borderColor = "rgba(234,179,8,0.5)"; }
     elements.hum.badge.innerText = humB;
     setGauge(elements.hum, data.Humidity);
 
-    // Gas (0-1000 ppm)
+    // Kualitas Udara MQ135 (Estimasi eCO2 ppm)
+    // EPA/ASHRAE: < 1000 Baik, 1000-2000 Sedang, > 2000 Buruk
     let gasB = "Baik";
     elements.gas.badge.style.color = "#10b981";
     elements.gas.badge.style.borderColor = "rgba(16,185,129,0.5)";
-    if(data.Gas > 400) { gasB = "Sedang"; elements.gas.badge.style.color = "#eab308"; }
-    if(data.Gas > 700) { gasB = "Buruk"; elements.gas.badge.style.color = "#ef4444"; elements.gas.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
+    if(data.Gas > 1000) { gasB = "Sedang"; elements.gas.badge.style.color = "#eab308"; elements.gas.badge.style.borderColor = "rgba(234,179,8,0.5)"; }
+    if(data.Gas > 2000) { gasB = "Buruk"; elements.gas.badge.style.color = "#ef4444"; elements.gas.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
     elements.gas.badge.innerText = gasB;
-    setGauge(elements.gas, (data.Gas / 1000) * 100);
+    setGauge(elements.gas, (data.Gas / 3000) * 100); // Scale up to 3000 for gauge
 
-    // Light (0-100000 lux, use log scale for gauge)
-    let lightB = "Redup";
-    if(data.Light > 10000) lightB = "Terang";
-    if(data.Light < 2000) lightB = "Mendung";
+    // Cahaya Lux
+    let lightB = "Pagi/Sore";
+    elements.light.badge.style.color = "#eab308";
+    elements.light.badge.style.borderColor = "rgba(234,179,8,0.5)";
+    if(data.Light > 10000) { lightB = "Terik"; elements.light.badge.style.color = "#ef4444"; elements.light.badge.style.borderColor = "rgba(239,68,68,0.5)"; }
+    else if(data.Light < 1000) { lightB = "Mendung"; elements.light.badge.style.color = "#94a3b8"; elements.light.badge.style.borderColor = "rgba(148,163,184,0.5)"; }
     elements.light.badge.innerText = lightB;
     let lightPct = (Math.log10(Math.max(1, data.Light)) / 5) * 100;
     setGauge(elements.light, lightPct);
@@ -111,6 +128,57 @@ function updateClock() {
     
     elements.ai.time30m.innerText = d30.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
     elements.ai.time1h.innerText = d1h.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+}
+
+let lastLat = null;
+let lastLon = null;
+let cachedAddress = "Mendeteksi koordinat satelit...";
+
+async function updateLocationAddress(lat, lon) {
+    if (lat === 0 && lon === 0) {
+        elements.gps.address.innerText = "Tidak ada sinyal GPS.";
+        return;
+    }
+    
+    // Check cache to avoid spamming Nominatim API
+    if (lastLat === lat && lastLon === lon) {
+        elements.gps.address.innerText = cachedAddress;
+        return;
+    }
+    
+    try {
+        elements.gps.address.innerText = "Memuat alamat...";
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+        const response = await fetch(url, {
+            headers: {
+                'Accept-Language': 'id-ID,id;q=0.9,en;q=0.8'
+            }
+        });
+        const data = await response.json();
+        
+        if (data && data.display_name) {
+            // Simplify address to fit nicely
+            const parts = data.display_name.split(', ');
+            let shortAddress = data.display_name;
+            if (parts.length > 4) {
+                shortAddress = parts.slice(0, 4).join(', ');
+            }
+            cachedAddress = shortAddress;
+        } else {
+            cachedAddress = "Alamat tidak ditemukan.";
+        }
+        
+        lastLat = lat;
+        lastLon = lon;
+        elements.gps.address.innerText = cachedAddress;
+        
+    } catch (err) {
+        console.error("Reverse geocoding error:", err);
+        cachedAddress = `Koordinat: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        lastLat = lat;
+        lastLon = lon;
+        elements.gps.address.innerText = cachedAddress;
+    }
 }
 
 async function fetchData() {
@@ -142,6 +210,7 @@ async function fetchData() {
             
             elements.gps.lat.innerText = "--";
             elements.gps.lon.innerText = "--";
+            elements.gps.address.innerText = "Sistem Offline. Menunggu koneksi...";
             elements.gps.btn.href = "#";
             
             elements.ai.currTemp.innerText = "--°";
@@ -186,6 +255,30 @@ async function fetchData() {
         elements.gps.lat.innerText = simData.Latitude.toFixed(6);
         elements.gps.lon.innerText = simData.Longitude.toFixed(6);
         elements.gps.btn.href = `https://maps.google.com/?q=${simData.Latitude},${simData.Longitude}`;
+        
+        updateLocationAddress(simData.Latitude, simData.Longitude);
+        
+        // Battery Logic (1-cell Li-ion assumed: 4.2V is 100%, 3.2V is 0%)
+        let v = simData.BatVoltage || 0;
+        let pct = ((v - 3.2) / (4.2 - 3.2)) * 100;
+        pct = Math.max(0, Math.min(100, Math.round(pct)));
+        
+        elements.battery.text.innerText = `Baterai ${pct}%`;
+        
+        if (simData.BatCurrent > 5) {
+            elements.battery.icon.className = "fa-solid fa-bolt";
+            elements.battery.icon.style.color = "#fbbf24";
+        } else {
+            if (pct > 80) elements.battery.icon.className = "fa-solid fa-battery-full";
+            else if (pct > 50) elements.battery.icon.className = "fa-solid fa-battery-three-quarters";
+            else if (pct > 20) elements.battery.icon.className = "fa-solid fa-battery-quarter";
+            else elements.battery.icon.className = "fa-solid fa-battery-empty";
+            elements.battery.icon.style.color = "";
+        }
+        
+        elements.battery.v.innerText = `${v.toFixed(2)} V`;
+        elements.battery.i.innerText = `${simData.BatCurrent.toFixed(1)} mA`;
+        elements.battery.p.innerText = `${simData.BatPower.toFixed(0)} mW`;
         
         deriveBadges(simData);
         
@@ -292,5 +385,41 @@ if (elements.resetWifiBtn) {
         }
     });
 }
+
+// Navbar Buttons Feedback
+const btnMenuMain = document.getElementById('btn-menu-main');
+const btnMenuMore = document.getElementById('btn-menu-more');
+const badgeBattery = document.getElementById('badge-battery');
+
+if (btnMenuMain) {
+    btnMenuMain.addEventListener('click', () => {
+        alert("Menu Navigasi Samping belum tersedia pada versi ini.\n\nSistem ini dirancang sebagai dasbor satu halaman (Single Page Dashboard).");
+    });
+}
+
+if (btnMenuMore) {
+    btnMenuMore.addEventListener('click', () => {
+        alert("Menu Pengaturan Lanjutan (Pengaturan Tema, Notifikasi, dsb) dapat dikembangkan lebih lanjut di sini.");
+    });
+}
+
+if (badgeBattery) {
+    badgeBattery.addEventListener('click', () => {
+        if (elements.battery.popup.style.display === "none") {
+            elements.battery.popup.style.display = "flex";
+        } else {
+            elements.battery.popup.style.display = "none";
+        }
+    });
+}
+
+// Close popup if clicking outside
+document.addEventListener('click', (e) => {
+    if (elements.battery.popup && elements.battery.popup.style.display === "flex") {
+        if (!badgeBattery.contains(e.target) && !elements.battery.popup.contains(e.target)) {
+            elements.battery.popup.style.display = "none";
+        }
+    }
+});
 
 startTimer();
