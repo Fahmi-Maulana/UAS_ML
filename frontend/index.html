@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Cuaca AI | Sensor Interaktif</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-animation">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <header class="glass-panel">
+            <div class="header-content">
+                <h1><i class="fa-solid fa-cloud-bolt"></i> AI Weather Prediction</h1>
+                <p>Sistem Pemantauan dan Klasifikasi Cuaca Berbasis Machine Learning</p>
+            </div>
+            <div class="status-indicator">
+                <div class="pulse-dot"></div>
+                <span>Sensor Active</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- SENSOR READINGS -->
+            <section class="sensor-grid">
+                <!-- Temperature -->
+                <div class="glass-card sensor-card" id="card-temp">
+                    <div class="card-icon"><i class="fa-solid fa-temperature-half"></i></div>
+                    <div class="card-data">
+                        <h3>Suhu</h3>
+                        <div class="value-wrapper">
+                            <span class="value" id="val-temp">--</span>
+                            <span class="unit">°C</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Humidity -->
+                <div class="glass-card sensor-card" id="card-hum">
+                    <div class="card-icon"><i class="fa-solid fa-droplet"></i></div>
+                    <div class="card-data">
+                        <h3>Kelembapan</h3>
+                        <div class="value-wrapper">
+                            <span class="value" id="val-hum">--</span>
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Light -->
+                <div class="glass-card sensor-card" id="card-light">
+                    <div class="card-icon"><i class="fa-solid fa-sun"></i></div>
+                    <div class="card-data">
+                        <h3>Intensitas Cahaya</h3>
+                        <div class="value-wrapper">
+                            <span class="value" id="val-light">--</span>
+                            <span class="unit">Lux</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Air Quality -->
+                <div class="glass-card sensor-card" id="card-gas">
+                    <div class="card-icon"><i class="fa-solid fa-wind"></i></div>
+                    <div class="card-data">
+                        <h3>Kualitas Udara</h3>
+                        <div class="value-wrapper">
+                            <span class="value" id="val-gas">--</span>
+                            <span class="unit">PPM</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- GPS -->
+                <div class="glass-card sensor-card gps-card" id="card-gps">
+                    <div class="card-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div class="card-data">
+                        <h3>Lokasi Alat (GPS)</h3>
+                        <div class="value-wrapper gps-values">
+                            <div class="gps-item">Lat: <span id="val-lat">-6.2000</span></div>
+                            <div class="gps-item">Lon: <span id="val-lon">106.8166</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PREDICTION RESULTS -->
+            <section class="prediction-section">
+                <div class="glass-card result-card current-weather">
+                    <h3><i class="fa-solid fa-clock"></i> Cuaca Saat Ini</h3>
+                    <div class="weather-icon-large" id="icon-current">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </div>
+                    <h2 class="weather-label" id="label-current">Menunggu Data...</h2>
+                </div>
+
+                <div class="glass-card result-card forecast-weather">
+                    <h3><i class="fa-solid fa-forward-step"></i> Prediksi 1 Jam Kedepan</h3>
+                    <div class="weather-icon-large" id="icon-1h">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </div>
+                    <h2 class="weather-label" id="label-1h">Menunggu Data...</h2>
+                </div>
+            </section>
+            
+            <div class="action-panel">
+                <button class="glass-btn primary" id="btn-predict">
+                    <i class="fa-solid fa-microchip"></i> Proses Prediksi AI
+                </button>
+                <button class="glass-btn secondary" id="btn-simulate">
+                    <i class="fa-solid fa-rotate"></i> Simulasi Data Baru
+                </button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 Ujian Akhir Semester Machine Learning - Random Forest Model</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
