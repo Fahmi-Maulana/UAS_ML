@@ -1,7 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiManager.h>
+#include <ArduinoOTA.h>
+#include <ESPmDNS.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
 
@@ -23,9 +26,8 @@ static const int PIN_MQ135_ADC = 36;
 static const int PIN_WIFI_LED = 2; // LED Indikator WiFi ESP32
 
 // ===================== KONFIGURASI SERVER =====================
-// Ganti dengan Domain CasaOS Anda (pastikan port dan path sesuai dengan app.py)
-// Contoh: "http://api.domain-anda.com/api/predict" atau "http://192.168.1.100:5000/api/predict"
-const char* serverUrl = "http://domain-casaos-anda.com/api/predict";
+// Alamat HTTPS Server CasaOS Anda
+const char* serverUrl = "https://rf.ijuloss.my.id/api/predict";
 
 // ===================== OBJEK SENSOR =====================
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
@@ -35,6 +37,8 @@ HardwareSerial SerialGPS(2); // Menggunakan UART2 (Pin 16, 17)
 
 // OLED Display (Resolusi 128x64) - Sesuaikan nama jika tipe OLED Anda berbeda
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, PIN_I2C_SCL, PIN_I2C_SDA);
+
+WiFiManager wm;
 
 // Timer untuk Interval Pengiriman Data (misal: kirim tiap 10 detik)
 unsigned long previousMillis = 0;
@@ -71,42 +75,55 @@ void setup() {
     u8g2.sendBuffer();
   }
 
-  // Koneksi WiFi dengan WiFiManager
-  WiFiManager wm;
+  // Koneksi WiFi dengan WiFiManager (Non-Blocking)
+  wm.setConfigPortalBlocking(false);
   
   u8g2.clearBuffer();
-  u8g2.drawStr(0, 15, "Koneksi WiFi...");
+  u8g2.drawStr(0, 15, "Menghubungkan WiFi...");
   u8g2.drawStr(0, 30, "Atau buka portal:");
   u8g2.drawStr(0, 45, "Cuaca_AI_AP");
   u8g2.sendBuffer();
 
-  // Memulai portal autoConnect. Program akan tertahan di sini sampai WiFi terhubung.
-  bool res = wm.autoConnect("Cuaca_AI_AP");
+  wm.autoConnect("Cuaca_AI_AP");
 
-  if(!res) {
-    Serial.println("Gagal terhubung, melakukan restart...");
+  // Konfigurasi ArduinoOTA
+  ArduinoOTA.setHostname("Cuaca-AI-ESP32");
+  ArduinoOTA.onStart([]() {
     u8g2.clearBuffer();
-    u8g2.drawStr(0, 15, "Gagal Terhubung!");
+    u8g2.drawStr(0, 15, "OTA Update Start...");
+    u8g2.sendBuffer();
+  });
+  ArduinoOTA.onEnd([]() {
+    u8g2.clearBuffer();
+    u8g2.drawStr(0, 15, "OTA Selesai!");
     u8g2.drawStr(0, 30, "Restarting...");
     u8g2.sendBuffer();
-    delay(3000);
-    ESP.restart();
-  }
-
-  digitalWrite(PIN_WIFI_LED, HIGH);
-  Serial.println("\nWiFi Terhubung.");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
-
-  u8g2.clearBuffer();
-  u8g2.drawStr(0, 15, "WiFi Terhubung!");
-  u8g2.setCursor(0, 30);
-  u8g2.print(WiFi.localIP());
-  u8g2.sendBuffer();
-  delay(2000);
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    u8g2.clearBuffer();
+    u8g2.drawStr(0, 15, "OTA Update...");
+    u8g2.setCursor(0, 30);
+    u8g2.print(progress / (total / 100));
+    u8g2.print(" %");
+    u8g2.sendBuffer();
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+  });
+  ArduinoOTA.begin();
 }
 
 void loop() {
+  wm.process(); // Proses WiFiManager secara non-blocking
+  ArduinoOTA.handle(); // Tangani request OTA
+
+  // Update LED Indikator WiFi
+  if (WiFi.status() == WL_CONNECTED) {
+    digitalWrite(PIN_WIFI_LED, HIGH);
+  } else {
+    digitalWrite(PIN_WIFI_LED, LOW);
+  }
+
   // Update data GPS setiap kali ada serial masuk
   while (SerialGPS.available() > 0) {
     gps.encode(SerialGPS.read());
@@ -139,16 +156,23 @@ void loop() {
     // Tampilkan di OLED
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(0, 10); u8g2.print("Suhu : "); u8g2.print(temp, 1); u8g2.print(" C");
-    u8g2.setCursor(0, 25); u8g2.print("Kelembapan: "); u8g2.print(hum, 1); u8g2.print(" %");
-    u8g2.setCursor(0, 40); u8g2.print("Cahaya: "); u8g2.print(light, 0); u8g2.print(" lx");
+    if (WiFi.status() == WL_CONNECTED) {
+      u8g2.setCursor(0, 10); u8g2.print("IP: "); u8g2.print(WiFi.localIP());
+    } else {
+      u8g2.setCursor(0, 10); u8g2.print("AP: Cuaca_AI_AP");
+    }
+    u8g2.setCursor(0, 25); u8g2.print("T:"); u8g2.print(temp, 1); u8g2.print("C H:"); u8g2.print(hum, 0); u8g2.print("%");
+    u8g2.setCursor(0, 40); u8g2.print("L:"); u8g2.print(light, 0); u8g2.print("lx G:"); u8g2.print(gasPPM, 0);
     u8g2.setCursor(0, 55); u8g2.print("Mengirim data...");
     u8g2.sendBuffer();
 
     // --- KIRIM DATA KE SERVER CASAOS ---
     if (WiFi.status() == WL_CONNECTED) {
+      WiFiClientSecure client;
+      client.setInsecure(); // Abaikan validasi sertifikat SSL agar praktis
+      
       HTTPClient http;
-      http.begin(serverUrl);
+      http.begin(client, serverUrl);
       http.addHeader("Content-Type", "application/json");
 
       // Buat JSON Payload
@@ -175,6 +199,25 @@ void loop() {
         // Membaca Balasan (Prediksi Cuaca dari Server)
         String payload = http.getString();
         Serial.println("Balasan Server: " + payload);
+        
+        // Parse JSON balasan untuk memeriksa apakah ada antrean perintah
+        StaticJsonDocument<512> responseDoc;
+        DeserializationError error = deserializeJson(responseDoc, payload);
+        if (!error) {
+          JsonArray commands = responseDoc["commands"];
+          for (JsonVariant v : commands) {
+            String cmd = v.as<String>();
+            if (cmd == "reset_wifi") {
+              Serial.println("Menerima perintah: RESET WIFI. Menghapus memori jaringan...");
+              u8g2.clearBuffer();
+              u8g2.drawStr(0, 30, "RESET WIFI...");
+              u8g2.sendBuffer();
+              wm.resetSettings();
+              delay(1000);
+              ESP.restart();
+            }
+          }
+        }
         
         u8g2.setCursor(0, 55); 
         u8g2.print("Terkirim (HTTP "); u8g2.print(httpResponseCode); u8g2.print(")");

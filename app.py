@@ -20,6 +20,9 @@ latest_data = {
     "timestamp": 0
 }
 
+# Queue for sending commands down to ESP32
+pending_commands = []
+
 if os.path.exists(MODEL_PATH):
     with open(MODEL_PATH, "rb") as f:
         models = pickle.load(f)
@@ -73,10 +76,17 @@ def predict():
         }
         latest_data["timestamp"] = time.time()
         
+        # Consume pending commands if any
+        cmds_to_send = []
+        if pending_commands:
+            cmds_to_send = pending_commands[:]
+            pending_commands.clear()
+        
         response = {
             "success": True,
             "predictions": latest_data["predictions"],
-            "sensor_echo": latest_data["sensor_data"]
+            "sensor_echo": latest_data["sensor_data"],
+            "commands": cmds_to_send
         }
         
         return jsonify(response)
@@ -87,6 +97,18 @@ def predict():
 @app.route('/api/data', methods=['GET'])
 def get_data():
     return jsonify(latest_data)
+
+@app.route('/api/command', methods=['POST'])
+def enqueue_command():
+    try:
+        data = request.json
+        cmd = data.get('cmd')
+        if cmd:
+            pending_commands.append(cmd)
+            return jsonify({"success": True, "message": f"Command '{cmd}' enqueued"})
+        return jsonify({"success": False, "error": "No command provided"}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
 
 @app.route('/', methods=['GET'])
 def index():

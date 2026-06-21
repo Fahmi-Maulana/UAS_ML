@@ -10,6 +10,7 @@ const elements = {
     time: document.getElementById('current-time'),
     refreshBtn: document.getElementById('refresh-btn'),
     refreshCounter: document.getElementById('refresh-counter'),
+    resetWifiBtn: document.getElementById('reset-wifi-btn'),
     
     ai: {
         currTemp: document.getElementById('ai-curr-temp'),
@@ -247,5 +248,29 @@ elements.refreshBtn.addEventListener('click', () => {
     elements.refreshCounter.innerText = countdown;
     fetchData();
 });
+
+if (elements.resetWifiBtn) {
+    elements.resetWifiBtn.addEventListener('click', async () => {
+        const confirmReset = confirm("Peringatan!\n\nApakah Anda yakin ingin mereset konfigurasi WiFi ESP32? Perangkat akan terputus dari jaringan dan harus dikonfigurasi ulang secara manual via Access Point 'Cuaca_AI_AP'.");
+        if (confirmReset) {
+            try {
+                const res = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cmd: 'reset_wifi' })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert("Perintah Reset WiFi telah dimasukkan ke dalam antrean. ESP32 akan segera terputus dan melakukan restart.");
+                } else {
+                    alert("Gagal mengirim perintah: " + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Terjadi kesalahan jaringan saat mengirim perintah.");
+            }
+        }
+    });
+}
 
 startTimer();
