@@ -275,35 +275,42 @@ body {
 .card-body-wrapper {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     margin-top: 1.5rem;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
 }
 
 .card-value {
-    font-size: 3.5rem;
+    font-size: 2.8rem;
     font-weight: 800;
     display: flex;
     align-items: baseline;
     gap: 0.4rem;
+    flex-shrink: 0;
 }
 
 .card-value .unit {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 600;
     color: var(--text-muted);
 }
 
 /* GAUGES */
 .gauge-container {
-    height: 90px;
+    height: auto;
+    width: 45%;
+    max-width: 140px;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
+    align-items: flex-end;
     position: relative;
+    flex-shrink: 1;
 }
 
 .gauge {
-    width: 180px;
-    height: 90px;
+    width: 100%;
+    height: auto;
     overflow: visible;
 }
 
@@ -543,22 +550,26 @@ body {
     .card { padding: 1.2rem; border-radius: 12px; }
     .card-header { margin-bottom: 0.5rem; }
     
-    /* Stack value and gauge on mobile! */
+    /* Keep side-by-side on mobile but scale perfectly */
     .card-body-wrapper { 
-        flex-direction: column; 
-        align-items: center; 
-        gap: 1rem; 
+        flex-direction: row; 
+        align-items: flex-end; 
+        justify-content: space-between;
+        gap: 0.5rem; 
         margin-top: 1rem;
     }
     .card-value { 
-        align-self: flex-start; /* keep value on the left */
-        font-size: 3rem; 
+        font-size: 2.4rem; 
         margin-bottom: 0; 
     }
-    .card-value .unit { font-size: 1.2rem; }
+    .card-value .unit { font-size: 1rem; }
     
-    .gauge-container { height: 90px; margin-top: 0.5rem; }
-    .gauge { width: 180px; height: 90px; }
+    .gauge-container { 
+        height: auto; 
+        width: 40%;
+        max-width: 120px;
+        margin-top: 0; 
+    }
     
     .bottom-row { gap: 1.5rem; }
     .ai-content { gap: 1.5rem; margin-top: 1rem; }
