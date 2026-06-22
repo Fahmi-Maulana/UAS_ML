@@ -356,6 +356,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 2rem;
+    align-items: start; /* prevents GPS card from stretching vertically */
 }
 
 /* GPS CARD */
@@ -421,8 +422,8 @@ body {
 
 .ai-content {
     display: flex;
-    gap: 2.5rem;
-    margin-top: 1.5rem;
+    gap: 1.5rem;
+    margin-top: 1rem;
 }
 
 .ai-current {
@@ -430,46 +431,46 @@ body {
 }
 
 .section-label {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: var(--text-muted);
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.mt-4 { margin-top: 2rem; }
-.mt-2 { margin-top: 0.8rem; }
+.mt-4 { margin-top: 1.2rem; }
+.mt-2 { margin-top: 0.5rem; }
 
 .ai-current-main {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 1.2rem;
 }
 
 .ai-current-main h1 {
-    font-size: 4.5rem;
+    font-size: 3.2rem;
     font-weight: 800;
 }
 
 .ai-curr-desc h2 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-main);
 }
 
 .ai-curr-desc p {
     color: var(--text-muted);
-    font-size: 1.1rem;
-    margin-top: 0.4rem;
+    font-size: 0.95rem;
+    margin-top: 0.2rem;
 }
 
 .recommendation-text {
-    color: var(--accent-yellow);
+    color: var(--accent-blue);
     font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 1.2rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
 }
 
 .confidence-badge {
