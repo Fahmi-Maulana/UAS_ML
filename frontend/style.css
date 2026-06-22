@@ -356,7 +356,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 2rem;
-    align-items: start; /* prevents GPS card from stretching vertically */
+    align-items: stretch; /* Both cards will be the exact same height */
 }
 
 /* GPS CARD */
@@ -371,6 +371,8 @@ body {
     flex-direction: column;
     gap: 0.8rem;
     margin-bottom: 1.5rem;
+    flex-grow: 1; /* fills available vertical space */
+    justify-content: center; /* perfectly centers the text blocks in the empty space */
 }
 
 .info-row {
