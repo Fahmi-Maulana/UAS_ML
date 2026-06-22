@@ -73,25 +73,27 @@
                         <span class="status-badge" id="badge-temp">Hangat</span>
                         <span class="card-title">Suhu</span>
                     </div>
-                    <div class="card-value">
-                        <span id="val-temp">--</span><span class="unit">°C</span>
-                    </div>
-                    <div class="gauge-container">
-                        <svg viewBox="0 0 100 50" class="gauge">
-                            <defs>
-                                <linearGradient id="gradTemp" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#4ade80" />
-                                    <stop offset="50%" stop-color="#eab308" />
-                                    <stop offset="100%" stop-color="#ef4444" />
-                                </linearGradient>
-                            </defs>
-                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
-                            <path class="gauge-fill" id="gauge-fill-temp" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradTemp)" />
-                            <g class="needle" id="needle-temp">
-                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
-                                <circle cx="50" cy="50" r="4" fill="#334155"/>
-                            </g>
-                        </svg>
+                    <div class="card-body-wrapper">
+                        <div class="card-value">
+                            <span id="val-temp">--</span><span class="unit">°C</span>
+                        </div>
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 100 50" class="gauge">
+                                <defs>
+                                    <linearGradient id="gradTemp" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#4ade80" />
+                                        <stop offset="50%" stop-color="#eab308" />
+                                        <stop offset="100%" stop-color="#ef4444" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                                <path class="gauge-fill" id="gauge-fill-temp" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradTemp)" />
+                                <g class="needle" id="needle-temp">
+                                    <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                    <circle cx="50" cy="50" r="4" fill="#334155"/>
+                                </g>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
@@ -104,24 +106,26 @@
                         <span class="status-badge" id="badge-hum">Lembap</span>
                         <span class="card-title">Kelembapan</span>
                     </div>
-                    <div class="card-value">
-                        <span id="val-hum">--</span><span class="unit">%</span>
-                    </div>
-                    <div class="gauge-container">
-                        <svg viewBox="0 0 100 50" class="gauge">
-                            <defs>
-                                <linearGradient id="gradHum" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#38bdf8" />
-                                    <stop offset="100%" stop-color="#2563eb" />
-                                </linearGradient>
-                            </defs>
-                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
-                            <path class="gauge-fill" id="gauge-fill-hum" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradHum)" />
-                            <g class="needle" id="needle-hum">
-                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
-                                <circle cx="50" cy="50" r="4" fill="#334155"/>
-                            </g>
-                        </svg>
+                    <div class="card-body-wrapper">
+                        <div class="card-value">
+                            <span id="val-hum">--</span><span class="unit">%</span>
+                        </div>
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 100 50" class="gauge">
+                                <defs>
+                                    <linearGradient id="gradHum" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#38bdf8" />
+                                        <stop offset="100%" stop-color="#2563eb" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                                <path class="gauge-fill" id="gauge-fill-hum" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradHum)" />
+                                <g class="needle" id="needle-hum">
+                                    <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                    <circle cx="50" cy="50" r="4" fill="#334155"/>
+                                </g>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
@@ -134,25 +138,27 @@
                         <span class="status-badge" id="badge-gas">Buruk</span>
                         <span class="card-title">Kualitas Udara</span>
                     </div>
-                    <div class="card-value">
-                        <span id="val-gas">--</span><span class="unit"> ppm</span>
-                    </div>
-                    <div class="gauge-container">
-                        <svg viewBox="0 0 100 50" class="gauge">
-                            <defs>
-                                <linearGradient id="gradGas" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#4ade80" />
-                                    <stop offset="50%" stop-color="#eab308" />
-                                    <stop offset="100%" stop-color="#ef4444" />
-                                </linearGradient>
-                            </defs>
-                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
-                            <path class="gauge-fill" id="gauge-fill-gas" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradGas)" />
-                            <g class="needle" id="needle-gas">
-                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
-                                <circle cx="50" cy="50" r="4" fill="#334155"/>
-                            </g>
-                        </svg>
+                    <div class="card-body-wrapper">
+                        <div class="card-value">
+                            <span id="val-gas">--</span><span class="unit"> ppm</span>
+                        </div>
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 100 50" class="gauge">
+                                <defs>
+                                    <linearGradient id="gradGas" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#4ade80" />
+                                        <stop offset="50%" stop-color="#eab308" />
+                                        <stop offset="100%" stop-color="#ef4444" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                                <path class="gauge-fill" id="gauge-fill-gas" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradGas)" />
+                                <g class="needle" id="needle-gas">
+                                    <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                    <circle cx="50" cy="50" r="4" fill="#334155"/>
+                                </g>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
@@ -165,24 +171,26 @@
                         <span class="status-badge" id="badge-light">Mendung</span>
                         <span class="card-title">Intensitas Cahaya</span>
                     </div>
-                    <div class="card-value">
-                        <span id="val-light">--</span><span class="unit"> lux</span>
-                    </div>
-                    <div class="gauge-container">
-                        <svg viewBox="0 0 100 50" class="gauge">
-                            <defs>
-                                <linearGradient id="gradLight" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#94a3b8" />
-                                    <stop offset="100%" stop-color="#fef08a" />
-                                </linearGradient>
-                            </defs>
-                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
-                            <path class="gauge-fill" id="gauge-fill-light" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradLight)" />
-                            <g class="needle" id="needle-light">
-                                <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
-                                <circle cx="50" cy="50" r="4" fill="#334155"/>
-                            </g>
-                        </svg>
+                    <div class="card-body-wrapper">
+                        <div class="card-value">
+                            <span id="val-light">--</span><span class="unit"> lux</span>
+                        </div>
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 100 50" class="gauge">
+                                <defs>
+                                    <linearGradient id="gradLight" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#94a3b8" />
+                                        <stop offset="100%" stop-color="#fef08a" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                                <path class="gauge-fill" id="gauge-fill-light" d="M 10 50 A 40 40 0 0 1 90 50" stroke="url(#gradLight)" />
+                                <g class="needle" id="needle-light">
+                                    <polygon points="48,50 52,50 50,15" fill="#94a3b8"/>
+                                    <circle cx="50" cy="50" r="4" fill="#334155"/>
+                                </g>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </div>
