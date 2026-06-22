@@ -140,7 +140,6 @@ void setup() {
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
   });
-  });
   // ArduinoOTA.begin() akan dipanggil di loop() setelah WiFi terkoneksi agar mDNS berhasil disiarkan
 }
 

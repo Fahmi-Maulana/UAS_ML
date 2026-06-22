@@ -397,9 +397,35 @@ if (btnMenuMain) {
     });
 }
 
+const btnThemeToggle = document.getElementById('btn-theme-toggle');
+
+// Initialize Theme
+const currentTheme = localStorage.getItem('theme');
+if (currentTheme) {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    if (currentTheme === 'light') {
+        btnThemeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    }
+}
+
+if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', () => {
+        let theme = document.documentElement.getAttribute('data-theme');
+        if (theme === 'light') {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'dark');
+            btnThemeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+            btnThemeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+        }
+    });
+}
+
 if (btnMenuMore) {
     btnMenuMore.addEventListener('click', () => {
-        alert("Menu Pengaturan Lanjutan (Pengaturan Tema, Notifikasi, dsb) dapat dikembangkan lebih lanjut di sini.");
+        alert("Pengaturan Dasbor (Sistem Notifikasi, Kalibrasi Sensor) dapat dikembangkan lebih lanjut di sini.");
     });
 }
 
