@@ -530,28 +530,44 @@ body {
 @media (max-width: 768px) {
     body { font-size: 14px; }
     .logo h1 { display: none; }
+    .nav-left, .nav-right { gap: 0.5rem; }
+    .menu-btn { width: 38px; height: 38px; font-size: 1rem; }
+    .battery-badge { padding: 0.4rem 0.6rem; font-size: 0.85rem; gap: 0.3rem; }
     .top-navbar { padding: 0.8rem 1rem; }
-    .battery-badge { padding: 0.4rem 0.8rem; font-size: 0.85rem; gap: 0.4rem; }
-    .status-bar { padding: 0.8rem 1rem; gap: 0.6rem; }
-    .status-pill { padding: 0.4rem 0.6rem; font-size: 0.8rem; gap: 0.4rem; }
-    .dashboard-grid { padding: 1rem; gap: 1rem; }
-    .sensor-row { gap: 1rem; }
+    
+    .status-bar { padding: 0.8rem 1rem; gap: 0.5rem; justify-content: center; }
+    .status-pill { padding: 0.4rem 0.5rem; font-size: 0.75rem; gap: 0.3rem; }
+    
+    .dashboard-grid { padding: 1rem; gap: 1.5rem; }
+    .sensor-row { gap: 1.5rem; }
     .card { padding: 1.2rem; border-radius: 12px; }
-    .card-header { margin-bottom: 1rem; }
-    .card-icon-badge { width: 40px; height: 40px; font-size: 1.2rem; }
-    .card-title { font-size: 0.9rem; }
-    .card-value { font-size: 2.2rem; margin-bottom: 0.2rem; }
-    .card-value .unit { font-size: 1.1rem; }
-    .gauge-container { height: 70px; margin-top: 0; }
-    .gauge { width: 140px; height: 70px; }
-    .bottom-row { gap: 1rem; }
+    .card-header { margin-bottom: 0.5rem; }
+    
+    /* Stack value and gauge on mobile! */
+    .card-body-wrapper { 
+        flex-direction: column; 
+        align-items: center; 
+        gap: 1rem; 
+        margin-top: 1rem;
+    }
+    .card-value { 
+        align-self: flex-start; /* keep value on the left */
+        font-size: 3rem; 
+        margin-bottom: 0; 
+    }
+    .card-value .unit { font-size: 1.2rem; }
+    
+    .gauge-container { height: 90px; margin-top: 0.5rem; }
+    .gauge { width: 180px; height: 90px; }
+    
+    .bottom-row { gap: 1.5rem; }
     .ai-content { gap: 1.5rem; margin-top: 1rem; }
     .ai-current-main { gap: 1rem; flex-direction: column; align-items: flex-start; }
-    .ai-current-main h1 { font-size: 2.8rem; }
+    .ai-current-main h1 { font-size: 3.5rem; }
     .ai-curr-desc h2 { font-size: 1.2rem; }
     .ai-curr-desc p { font-size: 1rem; }
     .recommendation-text { font-size: 1rem; }
     .fc-icon { font-size: 1.5rem; }
     .fc-label { font-size: 1rem; }
-    .forecast-item { min-width: 130px; padding: 1rem; }
+    .forecast-item { min-width: 120px; padding: 1rem; }
 }
